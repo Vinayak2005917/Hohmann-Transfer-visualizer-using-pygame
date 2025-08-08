@@ -9,6 +9,22 @@ pygame.init()
 # Font for live-updating text
 font = pygame.font.SysFont(None, 28)
 
+# buttons
+button_color = (150,150,150)
+button_hover_color = (100,100,100)
+
+#start button
+start_button_rect = pygame.Rect(10, 200, 100, 50)
+start_button_text = font.render('Start', True, (255, 255, 255))
+
+#stop button
+stop_button_rect = pygame.Rect(10, 260, 100, 50)
+stop_button_text = font.render('Stop', True, (255, 255, 255))
+
+#reset button
+reset_button_rect = pygame.Rect(10, 320, 100, 50)
+reset_button_text = font.render('Reset', True, (255, 255, 255))
+
 # Set up the display
 WIDTH, HEIGHT = 1280,720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -34,13 +50,15 @@ for i in range(0,628):
 	y = int((r*np.sin(i)/100)+zeroy)
 	pointslist.append((x,y))
 
-
+run = False
 # Main loop
 running = True
 while running:
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			running = False
+	mouse_pos = pygame.mouse.get_pos()
+	mouse_pressed = pygame.mouse.get_pressed()
 	window.fill((0, 0, 0))
 	
 	#earth
@@ -54,6 +72,14 @@ while running:
 	sat_x = int((r*np.cos(theta)/100)+zerox) 
 	sat_y = int((r*np.sin(theta)/100)+zeroy)
 
+	#updating the sat position
+	if run:	
+		time.sleep(0.01)
+		theta += 0.01
+	pygame.draw.circle(window, (255, 0, 0), (sat_x,sat_y), 5)
+
+
+
 	# Live-updating text (top left)
 	text_lines = [
 		f"Semi Major axis = {Orbit1.semi_major_axis:.2f}",
@@ -66,10 +92,37 @@ while running:
 		text_surface = font.render(line, True, (255, 255, 255))
 		window.blit(text_surface, (10, 10 + i * 28))
 
-		
-	time.sleep(0.01)
-	theta += 0.01
-	pygame.draw.circle(window, (255, 0, 0), (sat_x,sat_y), 5)
+	# Start button
+	if start_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, start_button_rect)
+		if mouse_pressed[0]:
+			run = True
+	else:
+		pygame.draw.rect(window, button_color, start_button_rect)
+	text_rect = start_button_text.get_rect(center=start_button_rect.center)
+	window.blit(start_button_text, text_rect)
+
+	# Stop button
+	if stop_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, stop_button_rect)
+		if mouse_pressed[0]:
+			run = False
+	else:
+		pygame.draw.rect(window, button_color, stop_button_rect)
+	text_rect = stop_button_text.get_rect(center=stop_button_rect.center)
+	window.blit(stop_button_text, text_rect)
+
+	# Reset button
+	if reset_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, reset_button_rect)
+		if mouse_pressed[0]:
+			run = False
+			theta = 0
+	else:
+		pygame.draw.rect(window, button_color, reset_button_rect)
+	text_rect = reset_button_text.get_rect(center=reset_button_rect.center)
+	window.blit(reset_button_text, text_rect)
+
 	pygame.display.flip()
 
 pygame.quit()
