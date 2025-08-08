@@ -21,17 +21,25 @@ Burn1_button_text = font.render('Burn 1', True, (255, 255, 255))
 Burn2_button_rect = pygame.Rect(10, 300, 100, 50)
 Burn2_button_text = font.render('Burn 2', True, (255, 255, 255))
 
+#Stop Burn button
+stop_burn_button_rect = pygame.Rect(10, 360, 100, 50)
+stop_burn_button_text = font.render('Stop Burn', True, (255, 255, 255))
+
+#Reset Orbit button
+reset_orbit_button_rect = pygame.Rect(10, 420, 110, 50)
+reset_orbit_button_text = font.render('Reset Orbit', True, (255, 255, 255))
+
 #start button
-start_button_rect = pygame.Rect(10, 360, 100, 50)
-start_button_text = font.render('Start', True, (255, 255, 255))
+start_sat_button_rect = pygame.Rect(420, 620, 100, 50)
+start_sat_button_text = font.render('Start Sat', True, (255, 255, 255))
 
 #stop button
-stop_button_rect = pygame.Rect(10, 420, 100, 50)
-stop_button_text = font.render('Stop', True, (255, 255, 255))
+stop_sat_button_rect = pygame.Rect(550, 620, 100, 50)
+stop_sat_button_text = font.render('Stop Sat', True, (255, 255, 255))
 
 #reset button
-reset_button_rect = pygame.Rect(10, 480, 100, 50)
-reset_button_text = font.render('Reset', True, (255, 255, 255))
+reset_sat_button_rect = pygame.Rect(680, 620, 100, 50)
+reset_sat_button_text = font.render('Reset Sat', True, (255, 255, 255))
 
 
 # Set up the display
@@ -66,6 +74,8 @@ Burn2 = False
 # Main loop
 running = True
 while running:
+	if theta > 6.28:
+		theta = 0
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			running = False
@@ -82,66 +92,81 @@ while running:
 	sat_x = int((r*np.cos(theta)/100)+zerox) 
 	sat_y = int((r*np.sin(theta)/100)+zeroy)
 
+	# Draw 'Satellite' text at the middle bottom
+	satellite_text = font.render('Satellite Controls', True, (255, 255, 255))
+	text_rect = satellite_text.get_rect(center=(WIDTH // 2-50, HEIGHT - 120))
+	window.blit(satellite_text, text_rect)
+
 	#updating the sat position
 	if run_sat:	
 		time.sleep(0.01)
 		theta += 0.01
 
 	if Burn1:
-		theta = 0
+		if abs(theta - 0) > 0.1:
+			theta += 0.01
+		if abs(theta - 0) < 0.1:
+			theta = 0
 
-		# Recalculate current perigee/apogee first
-		current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
-		current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
-		Orbit1.apogee = current_apogee
-		Orbit1.perigee = current_perigee
+			# Recalculate current perigee/apogee first
+			current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
+			current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
+			Orbit1.apogee = current_apogee
+			Orbit1.perigee = current_perigee
 
-		if Orbit1.apogee > Orbit2.apogee:
-			
-			# Decrease apogee gradually
-			increment = 100
-			new_apogee = current_apogee - increment
-			
-			Orbit1.semi_major_axis = (current_perigee + new_apogee) / 2
-			Orbit1.eccentricity = (new_apogee - current_perigee) / (new_apogee + current_perigee)
+			if Orbit1.apogee > Orbit2.apogee:
+				
+				# Decrease apogee gradually
+				increment = 100
+				new_apogee = current_apogee - increment
+				
+				Orbit1.semi_major_axis = (current_perigee + new_apogee) / 2
+				Orbit1.eccentricity = (new_apogee - current_perigee) / (new_apogee + current_perigee)
 
 
-			pointslist = []
-			for i in range(0,628):
-				i = i / 100
-				r = (Orbit1.semi_major_axis*(1-(Orbit1.eccentricity**2)))/(1+Orbit1.eccentricity*np.cos(i))
-				x = int((r*np.cos(i)/100)+zerox)
-				y = int((r*np.sin(i)/100)+zeroy)
-				pointslist.append((x,y))
-		else:
-			Burn1 = False
+				pointslist = []
+				for i in range(0,628):
+					i = i / 100
+					r = (Orbit1.semi_major_axis*(1-(Orbit1.eccentricity**2)))/(1+Orbit1.eccentricity*np.cos(i))
+					x = int((r*np.cos(i)/100)+zerox)
+					y = int((r*np.sin(i)/100)+zeroy)
+					pointslist.append((x,y))
+			else:
+				Burn1 = False
 	if Burn2:
-		# Recalculate current perigee/apogee first
-		current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
-		current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
-		Orbit1.apogee = current_apogee
-		Orbit1.perigee = current_perigee
-
-		if Orbit1.perigee > Orbit2.perigee+10:#tolerance of 10
+		if theta > 3.1415:
+			theta -= 0.01
+		if theta < 3.1415:
+			theta += 0.01
+		if abs(theta - 3.1415) < 0.1:
 			theta = 3.1415
-			
-			# Decrease apogee gradually
-			increment = 100
-			new_perigee = current_perigee - increment
-			
-			Orbit1.semi_major_axis = (new_perigee + current_apogee) / 2
-			Orbit1.eccentricity = (current_apogee - new_perigee) / (current_apogee + new_perigee)
+
+			# Recalculate current perigee/apogee first
+			current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
+			current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
+			Orbit1.apogee = current_apogee
+			Orbit1.perigee = current_perigee
+
+			if Orbit1.perigee > Orbit2.perigee+10:#tolerance of 10
+				theta = 3.1415
+				
+				# Decrease apogee gradually
+				increment = 100
+				new_perigee = current_perigee - increment
+				
+				Orbit1.semi_major_axis = (new_perigee + current_apogee) / 2
+				Orbit1.eccentricity = (current_apogee - new_perigee) / (current_apogee + new_perigee)
 
 
-			pointslist = []
-			for i in range(0,628):
-				i = i / 100
-				r = (Orbit1.semi_major_axis*(1-(Orbit1.eccentricity**2)))/(1+Orbit1.eccentricity*np.cos(i))
-				x = int((r*np.cos(i)/100)+zerox)
-				y = int((r*np.sin(i)/100)+zeroy)
-				pointslist.append((x,y))
-		else:
-			Burn2 = False
+				pointslist = []
+				for i in range(0,628):
+					i = i / 100
+					r = (Orbit1.semi_major_axis*(1-(Orbit1.eccentricity**2)))/(1+Orbit1.eccentricity*np.cos(i))
+					x = int((r*np.cos(i)/100)+zerox)
+					y = int((r*np.sin(i)/100)+zeroy)
+					pointslist.append((x,y))
+			else:
+				Burn2 = False
 
 
 		
@@ -186,7 +211,6 @@ while running:
 		pygame.draw.rect(window, button_hover_color, Burn1_button_rect)
 		if mouse_pressed[0]:
 			Burn1 = True
-			theta = 0
 	else:
 		pygame.draw.rect(window, button_color, Burn1_button_rect)
 	text_rect = Burn1_button_text.get_rect(center=Burn1_button_rect.center)
@@ -198,41 +222,59 @@ while running:
 		pygame.draw.rect(window, button_hover_color, Burn2_button_rect)
 		if mouse_pressed[0]:
 			Burn2 = True
-			theta = 3.1415
 	else:
 		pygame.draw.rect(window, button_color, Burn2_button_rect)
 	text_rect = Burn2_button_text.get_rect(center=Burn2_button_rect.center)
 	window.blit(Burn2_button_text, text_rect)
 
 	# Start button
-	if start_button_rect.collidepoint(mouse_pos):
-		pygame.draw.rect(window, button_hover_color, start_button_rect)
+	if start_sat_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, start_sat_button_rect)
 		if mouse_pressed[0]:
 			run_sat = True
 	else:
-		pygame.draw.rect(window, button_color, start_button_rect)
-	text_rect = start_button_text.get_rect(center=start_button_rect.center)
-	window.blit(start_button_text, text_rect)
+		pygame.draw.rect(window, button_color, start_sat_button_rect)
+	text_rect = start_sat_button_text.get_rect(center=start_sat_button_rect.center)
+	window.blit(start_sat_button_text, text_rect)
 
-	# Stop button
-	if stop_button_rect.collidepoint(mouse_pos):
-		pygame.draw.rect(window, button_hover_color, stop_button_rect)
+	# Stop Burn button
+	if stop_burn_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, stop_burn_button_rect)
 		if mouse_pressed[0]:
 			run_sat = False
 			Burn1 = False
 			Burn2 = False
 	else:
-		pygame.draw.rect(window, button_color, stop_button_rect)
-	text_rect = stop_button_text.get_rect(center=stop_button_rect.center)
-	window.blit(stop_button_text, text_rect)
+		pygame.draw.rect(window, button_color, stop_burn_button_rect)
+	text_rect = stop_burn_button_text.get_rect(center=stop_burn_button_rect.center)
+	window.blit(stop_burn_button_text, text_rect)
 
-	# Reset button
-	if reset_button_rect.collidepoint(mouse_pos):
-		pygame.draw.rect(window, button_hover_color, reset_button_rect)
+
+	# Stop Sat button
+	if stop_sat_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, stop_sat_button_rect)
+		if mouse_pressed[0]:
+			run_sat = False
+	else:
+		pygame.draw.rect(window, button_color, stop_sat_button_rect)
+	text_rect = stop_sat_button_text.get_rect(center=stop_sat_button_rect.center)
+	window.blit(stop_sat_button_text, text_rect)
+
+	# Reset Sat button
+	if reset_sat_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, reset_sat_button_rect)
 		if mouse_pressed[0]:
 			run_sat = False
 			theta = 0
+	else:
+		pygame.draw.rect(window, button_color, reset_sat_button_rect)
+	text_rect = reset_sat_button_text.get_rect(center=reset_sat_button_rect.center)
+	window.blit(reset_sat_button_text, text_rect)
 
+	# Reset Orbit button
+	if reset_orbit_button_rect.collidepoint(mouse_pos):
+		pygame.draw.rect(window, button_hover_color, reset_orbit_button_rect)
+		if mouse_pressed[0]:
 			Burn1 = False
 			Burn2 = False
 			Orbit1 = Orbit(15000,0.5)
@@ -244,9 +286,9 @@ while running:
 				y = int((r*np.sin(i)/100)+zeroy)
 				pointslist.append((x,y))
 	else:
-		pygame.draw.rect(window, button_color, reset_button_rect)
-	text_rect = reset_button_text.get_rect(center=reset_button_rect.center)
-	window.blit(reset_button_text, text_rect)
+		pygame.draw.rect(window, button_color, reset_orbit_button_rect)
+	text_rect = reset_orbit_button_text.get_rect(center=reset_orbit_button_rect.center)
+	window.blit(reset_orbit_button_text, text_rect)
 
 	pygame.display.flip()
 
