@@ -2,6 +2,10 @@
 
 A simple Python application using Pygame to visualize Hohmann transfer orbits.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/26908c1d-9b1b-42ac-9a2f-b19974ace0f8" width="831" height="467" alt="Hohmann Transfer Visualizer Screenshot" />
+</p>
+
 ## Features
 - Interactive input for initial and target orbit parameters
 - Real-time visualization of satellite movement and orbit changes
