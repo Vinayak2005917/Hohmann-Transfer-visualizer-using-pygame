@@ -50,6 +50,8 @@ class InputBox:
         # Draw text and box
         screen.blit(self.txt_surface, (self.rect.x+5, self.rect.y+5))
         pygame.draw.rect(screen, self.color, self.rect, 2)
+    def get_text(self):
+        return self.text
 
 class Text:
     def __init__(self, text, x, y, font, color=(255, 255, 255), center=False):
