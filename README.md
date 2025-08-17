@@ -16,21 +16,24 @@ A simple Python application using Pygame to visualize Hohmann transfer orbits.
 - `orbit.py`: Defines the `Orbit` class, encapsulating orbital mechanics calculations and properties.
 
 ## Formulas Used
-- **Orbit Radius**  
-  \[
-  r = \frac{a(1 - e^2)}{1 + e \cos(\theta)}
-  \]
 
-- **Apogee / Perigee**  
-  \[
-  \text{Apogee} = a(1 + e), \quad
-  \text{Perigee} = a(1 - e)
-  \]
+- **Orbit Radius**
 
-- **Velocity**  
-  \[
-  v = \sqrt{ \mu \left( \frac{2}{r} - \frac{1}{a} \right) }
-  \]
+$$
+r = \frac{a(1 - e^2)}{1 + e \cos(\theta)}
+$$
+
+- **Apogee / Perigee**
+
+$$
+\text{Apogee} = a(1 + e), \quad \text{Perigee} = a(1 - e)
+$$
+
+- **Velocity**
+
+$$
+v = \sqrt{ \mu \left( \frac{2}{r} - \frac{1}{a} \right) }
+$$
 
 ## Usage
 1. Install dependencies: `pip install pygame numpy`
