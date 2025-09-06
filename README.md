@@ -2,6 +2,10 @@
 
 A simple Python application using Pygame to visualize Hohmann transfer orbits.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/26908c1d-9b1b-42ac-9a2f-b19974ace0f8" width="831" height="467" alt="Hohmann Transfer Visualizer Screenshot" />
+</p>
+
 ## Features
 - Interactive input for initial and target orbit parameters
 - Real-time visualization of satellite movement and orbit changes
@@ -12,15 +16,24 @@ A simple Python application using Pygame to visualize Hohmann transfer orbits.
 - `orbit.py`: Defines the `Orbit` class, encapsulating orbital mechanics calculations and properties.
 
 ## Formulas Used
-- **Orbit Radius**:  
-  \( r = \frac{a(1 - e^2)}{1 + e \cos(\theta)} \)  
-  where \( a \) is the semi-major axis, \( e \) is eccentricity, \( \theta \) is true anomaly.
-- **Apogee/Perigee**:  
-  \( \text{Apogee} = a(1 + e) \)  
-  \( \text{Perigee} = a(1 - e) \)
-- **Velocity**:  
-  \( v = \sqrt{\mu \left( \frac{2}{r} - \frac{1}{a} \right)} \)  
-  where \( \mu \) is Earth's gravitational parameter.
+
+- **Orbit Radius**
+
+$$
+r = \frac{a(1 - e^2)}{1 + e \cos(\theta)}
+$$
+
+- **Apogee / Perigee**
+
+$$
+\text{Apogee} = a(1 + e), \quad \text{Perigee} = a(1 - e)
+$$
+
+- **Velocity**
+
+$$
+v = \sqrt{ \mu \left( \frac{2}{r} - \frac{1}{a} \right) }
+$$
 
 ## Usage
 1. Install dependencies: `pip install pygame numpy`
