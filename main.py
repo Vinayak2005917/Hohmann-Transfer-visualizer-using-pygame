@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
-import time
 import math
+import asyncio
 from orbit import Orbit
 from utils import InputBox, Text, Button
 
@@ -18,6 +18,7 @@ button_hover_color = (100, 100, 100)
 WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hohmann Transfer Visualizer")
+clock = pygame.time.Clock()
 
 # Input boxes
 initial_apogee_box = InputBox(10, 565, 140, 40)
@@ -84,208 +85,219 @@ run_sat = False
 Burn1 = False
 Burn2 = False
 
-# Main loop
-running = True
-while running:
-    if theta > 6.28:
-        theta = 0
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-        initial_apogee_result = initial_apogee_box.handle_event(event)
-        initial_perigee_result = initial_perigee_box.handle_event(event)
-        if initial_apogee_result is not None:
-            initial_apogee_value = initial_apogee_result
-        if initial_perigee_result is not None:
-            initial_perigee_value = initial_perigee_result
-
-        target_apogee_result = target_apogee_box.handle_event(event)
-        target_perigee_result = target_perigee_box.handle_event(event)
-        if target_apogee_result is not None:
-            target_apogee_value = target_apogee_result
-        if target_perigee_result is not None:
-            target_perigee_value = target_perigee_result
-
-    mouse_pos = pygame.mouse.get_pos()
-    mouse_pressed = pygame.mouse.get_pressed()
-    window.fill((0, 0, 0))
-
-    # Earth
-    pygame.draw.circle(window, (0, 0, 255), (zerox, zeroy), int(earth_radius))
-
-    # Satellite
-    r = (Orbit1.semi_major_axis * (1 - (Orbit1.eccentricity ** 2))) / (1 + Orbit1.eccentricity * np.cos(theta))
-    sat_x = int((r * np.cos(theta) / 100) + zerox)
-    sat_y = int((r * np.sin(theta) / 100) + zeroy)
-
-    # Satellite controls header
-    satellite_controls_text.draw(window)
-    initial_orbit_instructions.draw(window)
-    Enter_apogee.draw(window)
-    Enter_perigee.draw(window)
-    target_orbit_instructions.draw(window)
-    Enter_Target_apogee.draw(window)
-    Enter_Target_perigee.draw(window)
-
-    # Satellite movement
-    if run_sat:
-        time.sleep(0.01)
-        theta += 0.01
-
-    if Burn1:
-        if abs(theta - 0) > 0.1:
-            theta += 0.01
-        if abs(theta - 0) < 0.1:
+async def main():
+    # Main loop
+    global theta, Orbit1, Orbit2, pointlist1, pointlist2, run_sat, Burn1, Burn2
+    running = True
+    while running:
+        if theta > 6.28:
             theta = 0
-            current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
-            current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
-            Orbit1.apogee = current_apogee
-            Orbit1.perigee = current_perigee
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-            if Orbit1.apogee > Orbit2.apogee + 10:
-                increment = 100
-                new_apogee = current_apogee - increment
-                Orbit1.semi_major_axis = (current_perigee + new_apogee) / 2
-                Orbit1.eccentricity = (new_apogee - current_perigee) / (new_apogee + current_perigee)
-                pointlist1 = update_points(Orbit1)
-            elif Orbit1.apogee < Orbit2.apogee - 10:
-                increment = 100
-                new_apogee = current_apogee + increment
-                Orbit1.semi_major_axis = (current_perigee + new_apogee) / 2
-                Orbit1.eccentricity = (new_apogee - current_perigee) / (new_apogee + current_perigee)
-                pointlist1 = update_points(Orbit1)
+            initial_apogee_result = initial_apogee_box.handle_event(event)
+            initial_perigee_result = initial_perigee_box.handle_event(event)
+            if initial_apogee_result is not None:
+                initial_apogee_value = initial_apogee_result
+            if initial_perigee_result is not None:
+                initial_perigee_value = initial_perigee_result
 
-            else:
-                Burn1 = False
+            target_apogee_result = target_apogee_box.handle_event(event)
+            target_perigee_result = target_perigee_box.handle_event(event)
+            if target_apogee_result is not None:
+                target_apogee_value = target_apogee_result
+            if target_perigee_result is not None:
+                target_perigee_value = target_perigee_result
 
-    if Burn2:
-        if theta > 3.1415:
-            theta -= 0.01
-        if theta < 3.1415:
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_pressed = pygame.mouse.get_pressed()
+        window.fill((0, 0, 0))
+
+        # Earth
+        pygame.draw.circle(window, (0, 0, 255), (zerox, zeroy), int(earth_radius))
+
+        # Satellite
+        r = (Orbit1.semi_major_axis * (1 - (Orbit1.eccentricity ** 2))) / (1 + Orbit1.eccentricity * np.cos(theta))
+        sat_x = int((r * np.cos(theta) / 100) + zerox)
+        sat_y = int((r * np.sin(theta) / 100) + zeroy)
+
+        # Satellite controls header
+        satellite_controls_text.draw(window)
+        initial_orbit_instructions.draw(window)
+        Enter_apogee.draw(window)
+        Enter_perigee.draw(window)
+        target_orbit_instructions.draw(window)
+        Enter_Target_apogee.draw(window)
+        Enter_Target_perigee.draw(window)
+
+        # Satellite movement
+        if run_sat:
+            # Use non-blocking sleep in async loop
+            await asyncio.sleep(0.01)
             theta += 0.01
-        if abs(theta - 3.1415) < 0.1:
-            theta = 3.1415
-            current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
-            current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
-            Orbit1.apogee = current_apogee
-            Orbit1.perigee = current_perigee
 
-            if Orbit1.perigee > Orbit2.perigee + 10:
-                increment = 100
-                new_perigee = current_perigee - increment
-                Orbit1.semi_major_axis = (new_perigee + current_apogee) / 2
-                Orbit1.eccentricity = (current_apogee - new_perigee) / (current_apogee + new_perigee)
-                pointlist1 = update_points(Orbit1)
-            elif Orbit1.perigee < Orbit2.perigee - 10:
-                increment = 100
-                new_perigee = current_perigee + increment
-                Orbit1.semi_major_axis = (new_perigee + current_apogee) / 2
-                Orbit1.eccentricity = (current_apogee - new_perigee) / (current_apogee + new_perigee)
-                pointlist1 = update_points(Orbit1)
-            else:
-                Burn2 = False
+        if Burn1:
+            if abs(theta - 0) > 0.1:
+                theta += 0.01
+            if abs(theta - 0) < 0.1:
+                theta = 0
+                current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
+                current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
+                Orbit1.apogee = current_apogee
+                Orbit1.perigee = current_perigee
 
-    # Draw orbits and satellite
-    pygame.draw.polygon(window, (100, 100, 100), pointlist2, width=2)#target orbit
-    pygame.draw.polygon(window, (255, 255, 255), pointlist1, width=2)#inital orbit
-    pygame.draw.circle(window, (255, 0, 0), (sat_x, sat_y), 5)
+                if Orbit1.apogee > Orbit2.apogee + 10:
+                    increment = 100
+                    new_apogee = current_apogee - increment
+                    Orbit1.semi_major_axis = (current_perigee + new_apogee) / 2
+                    Orbit1.eccentricity = (new_apogee - current_perigee) / (new_apogee + current_perigee)
+                    pointlist1 = update_points(Orbit1)
+                elif Orbit1.apogee < Orbit2.apogee - 10:
+                    increment = 100
+                    new_apogee = current_apogee + increment
+                    Orbit1.semi_major_axis = (current_perigee + new_apogee) / 2
+                    Orbit1.eccentricity = (new_apogee - current_perigee) / (new_apogee + current_perigee)
+                    pointlist1 = update_points(Orbit1)
+
+                else:
+                    Burn1 = False
+
+        if Burn2:
+            if theta > 3.1415:
+                theta -= 0.01
+            if theta < 3.1415:
+                theta += 0.01
+            if abs(theta - 3.1415) < 0.1:
+                theta = 3.1415
+                current_perigee = Orbit1.semi_major_axis * (1 - Orbit1.eccentricity)
+                current_apogee = Orbit1.semi_major_axis * (1 + Orbit1.eccentricity)
+                Orbit1.apogee = current_apogee
+                Orbit1.perigee = current_perigee
+
+                if Orbit1.perigee > Orbit2.perigee + 10:
+                    increment = 100
+                    new_perigee = current_perigee - increment
+                    Orbit1.semi_major_axis = (new_perigee + current_apogee) / 2
+                    Orbit1.eccentricity = (current_apogee - new_perigee) / (current_apogee + new_perigee)
+                    pointlist1 = update_points(Orbit1)
+                elif Orbit1.perigee < Orbit2.perigee - 10:
+                    increment = 100
+                    new_perigee = current_perigee + increment
+                    Orbit1.semi_major_axis = (new_perigee + current_apogee) / 2
+                    Orbit1.eccentricity = (current_apogee - new_perigee) / (current_apogee + new_perigee)
+                    pointlist1 = update_points(Orbit1)
+                else:
+                    Burn2 = False
+
+        # Draw orbits and satellite
+        pygame.draw.polygon(window, (100, 100, 100), pointlist2, width=2)#target orbit
+        pygame.draw.polygon(window, (255, 255, 255), pointlist1, width=2)#inital orbit
+        pygame.draw.circle(window, (255, 0, 0), (sat_x, sat_y), 5)
 
 
-    v = np.sqrt(mu*((2/r)-(1/Orbit1.semi_major_axis)))
-    # Current Orbit/ text
-    current_orbit_lines = [
-        f"Current Orbit",
-        f"Semi Major axis = {Orbit1.semi_major_axis:.2f}",
-        f"eccentricity = {Orbit1.eccentricity:.3f}",
-        f"Apogee = {Orbit1.apogee - 6371:.2f}",
-        f"Perigee = {Orbit1.perigee - 6371:.2f}",
-        f"True anomaly = {theta:.3f}",
-        f"sat_x = {sat_x}",
-        f"sat_y = {sat_y}",
-        f"Velocity = {v:.2f} km/s"
-    ]
-    for i, line in enumerate(current_orbit_lines):
-        Text(line, 10, 10 + i * 28, font).draw(window)
+        v = np.sqrt(mu*((2/r)-(1/Orbit1.semi_major_axis)))
+        # Current Orbit/ text
+        current_orbit_lines = [
+            f"Current Orbit",
+            f"Semi Major axis = {Orbit1.semi_major_axis:.2f}",
+            f"eccentricity = {Orbit1.eccentricity:.3f}",
+            f"Apogee = {Orbit1.apogee - 6371:.2f}",
+            f"Perigee = {Orbit1.perigee - 6371:.2f}",
+            f"True anomaly = {theta:.3f}",
+            f"sat_x = {sat_x}",
+            f"sat_y = {sat_y}",
+            f"Velocity = {v:.2f} km/s"
+        ]
+        for i, line in enumerate(current_orbit_lines):
+            Text(line, 10, 10 + i * 28, font).draw(window)
 
-    # Target Orbit text
-    target_orbit_lines = [
-        "Target Orbit",
-        f"Semi Major axis = {Orbit2.semi_major_axis:.2f}",
-        f"eccentricity = {Orbit2.eccentricity:.3f}",
-        f"Apogee = {Orbit2.apogee-6371:.2f}",
-        f"Perigee = {Orbit2.perigee-6371:.2f}"
-    ]
-    for i, line in enumerate(target_orbit_lines):
-        Text(line, 1000, 10 + i * 28, font).draw(window)
+        # Target Orbit text
+        target_orbit_lines = [
+            "Target Orbit",
+            f"Semi Major axis = {Orbit2.semi_major_axis:.2f}",
+            f"eccentricity = {Orbit2.eccentricity:.3f}",
+            f"Apogee = {Orbit2.apogee-6371:.2f}",
+            f"Perigee = {Orbit2.perigee-6371:.2f}"
+        ]
+        for i, line in enumerate(target_orbit_lines):
+            Text(line, 1000, 10 + i * 28, font).draw(window)
 
-    # Button logic
-    burn1_button.draw(window, mouse_pos)
-    if burn1_button.is_clicked(mouse_pos, mouse_pressed):
-        Burn1 = True
+        # Button logic
+        burn1_button.draw(window, mouse_pos)
+        if burn1_button.is_clicked(mouse_pos, mouse_pressed):
+            Burn1 = True
 
-    burn2_button.draw(window, mouse_pos)
-    if burn2_button.is_clicked(mouse_pos, mouse_pressed):
-        Burn2 = True
+        burn2_button.draw(window, mouse_pos)
+        if burn2_button.is_clicked(mouse_pos, mouse_pressed):
+            Burn2 = True
 
-    start_sat_button.draw(window, mouse_pos)
-    if start_sat_button.is_clicked(mouse_pos, mouse_pressed):
-        run_sat = True
+        start_sat_button.draw(window, mouse_pos)
+        if start_sat_button.is_clicked(mouse_pos, mouse_pressed):
+            run_sat = True
 
-    stop_burn_button.draw(window, mouse_pos)
-    if stop_burn_button.is_clicked(mouse_pos, mouse_pressed):
-        run_sat = False
-        Burn1 = False
-        Burn2 = False
+        stop_burn_button.draw(window, mouse_pos)
+        if stop_burn_button.is_clicked(mouse_pos, mouse_pressed):
+            run_sat = False
+            Burn1 = False
+            Burn2 = False
 
-    stop_sat_button.draw(window, mouse_pos)
-    if stop_sat_button.is_clicked(mouse_pos, mouse_pressed):
-        run_sat = False
+        stop_sat_button.draw(window, mouse_pos)
+        if stop_sat_button.is_clicked(mouse_pos, mouse_pressed):
+            run_sat = False
 
-    reset_sat_button.draw(window, mouse_pos)
-    if reset_sat_button.is_clicked(mouse_pos, mouse_pressed):
-        run_sat = False
-        theta = 0
+        reset_sat_button.draw(window, mouse_pos)
+        if reset_sat_button.is_clicked(mouse_pos, mouse_pressed):
+            run_sat = False
+            theta = 0
 
-    reset_orbit_button.draw(window, mouse_pos)
-    if reset_orbit_button.is_clicked(mouse_pos, mouse_pressed):
-        Burn1 = False
-        Burn2 = False
-        Orbit1 = Orbit(15000, 0.5)
-        pointlist1 = update_points(Orbit1)
-        
-    # Apply initial orbit button
-    apply_initial_orbit.draw(window, mouse_pos)
-    if apply_initial_orbit.is_clicked(mouse_pos, mouse_pressed):
-        try:
-            set_initial_apogee = 6371 + float(initial_apogee_box.get_text())
-            set_initial_perigee = 6371 + float(initial_perigee_box.get_text())
-            if set_initial_apogee >= set_initial_perigee:
-                Orbit1 = Orbit((set_initial_apogee + set_initial_perigee) / 2, (set_initial_apogee - set_initial_perigee) / (set_initial_apogee + set_initial_perigee))
-                pointlist1 = update_points(Orbit1)
-        except ValueError:
-            pass
+        reset_orbit_button.draw(window, mouse_pos)
+        if reset_orbit_button.is_clicked(mouse_pos, mouse_pressed):
+            Burn1 = False
+            Burn2 = False
+            Orbit1 = Orbit(15000, 0.5)
+            pointlist1 = update_points(Orbit1)
+            
+        # Apply initial orbit button
+        apply_initial_orbit.draw(window, mouse_pos)
+        if apply_initial_orbit.is_clicked(mouse_pos, mouse_pressed):
+            try:
+                set_initial_apogee = 6371 + float(initial_apogee_box.get_text())
+                set_initial_perigee = 6371 + float(initial_perigee_box.get_text())
+                if set_initial_apogee >= set_initial_perigee:
+                    Orbit1 = Orbit((set_initial_apogee + set_initial_perigee) / 2, (set_initial_apogee - set_initial_perigee) / (set_initial_apogee + set_initial_perigee))
+                    pointlist1 = update_points(Orbit1)
+            except ValueError:
+                pass
 
-    # Apply target orbit button
-    apply_target_orbit.draw(window, mouse_pos)
-    if apply_target_orbit.is_clicked(mouse_pos, mouse_pressed):
-        try:
-            set_target_apogee = 6371 + float(target_apogee_box.get_text())
-            set_target_perigee = 6371 + float(target_perigee_box.get_text())
-            if set_target_apogee >= set_target_perigee:
-                Orbit2 = Orbit((set_target_apogee + set_target_perigee) / 2, (set_target_apogee - set_target_perigee) / (set_target_apogee + set_target_perigee))
-                pointlist2 = update_points(Orbit2)
+        # Apply target orbit button
+        apply_target_orbit.draw(window, mouse_pos)
+        if apply_target_orbit.is_clicked(mouse_pos, mouse_pressed):
+            try:
+                set_target_apogee = 6371 + float(target_apogee_box.get_text())
+                set_target_perigee = 6371 + float(target_perigee_box.get_text())
+                if set_target_apogee >= set_target_perigee:
+                    Orbit2 = Orbit((set_target_apogee + set_target_perigee) / 2, (set_target_apogee - set_target_perigee) / (set_target_apogee + set_target_perigee))
+                    pointlist2 = update_points(Orbit2)
 
-        except ValueError:
-            pass
+            except ValueError:
+                pass
 
-    # Input boxes
-    initial_apogee_box.draw(window)
-    initial_perigee_box.draw(window)
+        # Input boxes
+        initial_apogee_box.draw(window)
+        initial_perigee_box.draw(window)
 
-    target_apogee_box.draw(window)
-    target_perigee_box.draw(window)
+        target_apogee_box.draw(window)
+        target_perigee_box.draw(window)
 
-    pygame.display.flip()
+        pygame.display.flip()
+
+        # Yield to the event loop (browser-friendly) and cap FPS (desktop-friendly)
+        await asyncio.sleep(0)
+        clock.tick(60)
+
+    # Loop ended; fall through to shutdown
+    
+asyncio.run(main())
 
 pygame.quit()
