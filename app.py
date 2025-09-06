@@ -1,11 +1,3 @@
-# /// script
-# dependencies = [
-# "pygame",
-# "numpy",
-# ]
-# ///
-
-import asyncio
 import pygame
 import numpy as np
 import time
@@ -15,20 +7,26 @@ from utils import InputBox, Text, Button
 
 pygame.init()
 
+# Font for live-updating text
 font = pygame.font.SysFont(None, 28)
 
+# Colors
 button_color = (150, 150, 150)
 button_hover_color = (100, 100, 100)
 
+# Set up the display
 WIDTH, HEIGHT = 1280, 720
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Hohmann Transfer Visualizer")
 
+# Input boxes
 initial_apogee_box = InputBox(10, 565, 140, 40)
 initial_perigee_box = InputBox(10, 645, 140, 40)
+
 target_apogee_box = InputBox(1000, 565, 140, 40)
 target_perigee_box = InputBox(1000, 645, 140, 40)
 
+# Buttons
 burn1_button = Button(380, 15, 100, 50, "Burn 1", font, button_color, button_hover_color)
 burn2_button = Button(500, 15, 100, 50, "Burn 2", font, button_color, button_hover_color)
 stop_burn_button = Button(620, 15, 100, 50, "Stop Burn", font, button_color, button_hover_color)
@@ -38,26 +36,37 @@ start_sat_button = Button(420, 620, 100, 50, "Start Sat", font, button_color, bu
 stop_sat_button = Button(550, 620, 100, 50, "Stop Sat", font, button_color, button_hover_color)
 reset_sat_button = Button(680, 620, 100, 50, "Reset Sat", font, button_color, button_hover_color)
 
+
 apply_initial_orbit = Button(170, 640, 100, 50, "Apply", font, button_color, button_hover_color)
 apply_target_orbit = Button(870, 640, 100, 50, "Apply", font, button_color, button_hover_color)
 
+
+# Text headers
 satellite_controls_text = Text("Satellite Controls", WIDTH // 2 - 50, HEIGHT - 120, font, (255, 255, 255), center=True)
+
+
 initial_orbit_instructions = Text("Enter initial orbit parameters:", 10, 500, font, (255, 255, 255))
 Enter_apogee = Text("Enter apogee:", 10, 535, font, (255, 255, 255))
 Enter_perigee = Text("Enter perigee:", 10, 615, font, (255, 255, 255))
+
 target_orbit_instructions = Text("Enter target orbit parameters:", 1000, 500, font, (255, 255, 255))
 Enter_Target_apogee = Text("Enter apogee:", 1000, 535, font, (255, 255, 255))
 Enter_Target_perigee = Text("Enter perigee:", 1000, 615, font, (255, 255, 255))
 
-mu = 398600
+# Constants
+mu = 398600  # Earth's gravitational parameter, km^3/s^2
 earth_radius = 63.71
-zerox, zeroy = WIDTH // 2, HEIGHT // 2
+zerox = WIDTH // 2
+zeroy = HEIGHT // 2
 
+# Orbits
 Orbit1 = Orbit(15000, 0.5)
 Orbit2 = Orbit(8000, 0.1)
 
+# True anomaly for the satellite
 theta = 0
 
+# Points for the orbit
 def update_points(orbit):
     pts = []
     for i in range(0, 628):
@@ -75,6 +84,7 @@ run_sat = False
 Burn1 = False
 Burn2 = False
 
+# Main loop
 running = True
 while running:
     if theta > 6.28:
@@ -101,12 +111,15 @@ while running:
     mouse_pressed = pygame.mouse.get_pressed()
     window.fill((0, 0, 0))
 
+    # Earth
     pygame.draw.circle(window, (0, 0, 255), (zerox, zeroy), int(earth_radius))
 
+    # Satellite
     r = (Orbit1.semi_major_axis * (1 - (Orbit1.eccentricity ** 2))) / (1 + Orbit1.eccentricity * np.cos(theta))
     sat_x = int((r * np.cos(theta) / 100) + zerox)
     sat_y = int((r * np.sin(theta) / 100) + zeroy)
 
+    # Satellite controls header
     satellite_controls_text.draw(window)
     initial_orbit_instructions.draw(window)
     Enter_apogee.draw(window)
@@ -115,6 +128,7 @@ while running:
     Enter_Target_apogee.draw(window)
     Enter_Target_perigee.draw(window)
 
+    # Satellite movement
     if run_sat:
         time.sleep(0.01)
         theta += 0.01
@@ -141,6 +155,7 @@ while running:
                 Orbit1.semi_major_axis = (current_perigee + new_apogee) / 2
                 Orbit1.eccentricity = (new_apogee - current_perigee) / (new_apogee + current_perigee)
                 pointlist1 = update_points(Orbit1)
+
             else:
                 Burn1 = False
 
@@ -171,11 +186,14 @@ while running:
             else:
                 Burn2 = False
 
-    pygame.draw.polygon(window, (100, 100, 100), pointlist2, width=2)
-    pygame.draw.polygon(window, (255, 255, 255), pointlist1, width=2)
+    # Draw orbits and satellite
+    pygame.draw.polygon(window, (100, 100, 100), pointlist2, width=2)#target orbit
+    pygame.draw.polygon(window, (255, 255, 255), pointlist1, width=2)#inital orbit
     pygame.draw.circle(window, (255, 0, 0), (sat_x, sat_y), 5)
 
+
     v = np.sqrt(mu*((2/r)-(1/Orbit1.semi_major_axis)))
+    # Current Orbit/ text
     current_orbit_lines = [
         f"Current Orbit",
         f"Semi Major axis = {Orbit1.semi_major_axis:.2f}",
@@ -190,6 +208,7 @@ while running:
     for i, line in enumerate(current_orbit_lines):
         Text(line, 10, 10 + i * 28, font).draw(window)
 
+    # Target Orbit text
     target_orbit_lines = [
         "Target Orbit",
         f"Semi Major axis = {Orbit2.semi_major_axis:.2f}",
@@ -200,6 +219,7 @@ while running:
     for i, line in enumerate(target_orbit_lines):
         Text(line, 1000, 10 + i * 28, font).draw(window)
 
+    # Button logic
     burn1_button.draw(window, mouse_pos)
     if burn1_button.is_clicked(mouse_pos, mouse_pressed):
         Burn1 = True
@@ -233,7 +253,8 @@ while running:
         Burn2 = False
         Orbit1 = Orbit(15000, 0.5)
         pointlist1 = update_points(Orbit1)
-
+        
+    # Apply initial orbit button
     apply_initial_orbit.draw(window, mouse_pos)
     if apply_initial_orbit.is_clicked(mouse_pos, mouse_pressed):
         try:
@@ -245,6 +266,7 @@ while running:
         except ValueError:
             pass
 
+    # Apply target orbit button
     apply_target_orbit.draw(window, mouse_pos)
     if apply_target_orbit.is_clicked(mouse_pos, mouse_pressed):
         try:
@@ -253,11 +275,14 @@ while running:
             if set_target_apogee >= set_target_perigee:
                 Orbit2 = Orbit((set_target_apogee + set_target_perigee) / 2, (set_target_apogee - set_target_perigee) / (set_target_apogee + set_target_perigee))
                 pointlist2 = update_points(Orbit2)
+
         except ValueError:
             pass
 
+    # Input boxes
     initial_apogee_box.draw(window)
     initial_perigee_box.draw(window)
+
     target_apogee_box.draw(window)
     target_perigee_box.draw(window)
 
